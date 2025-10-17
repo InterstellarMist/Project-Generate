@@ -21,7 +21,7 @@ export const states: Record<string, State> = {};
 for (const [key, val] of Object.entries(baseStates)) {
   // rotate state
   for (let i = 0; i < 4; i++) {
-    const sockets = rotateRightBits(val.sockets, i, 4);
+    const sockets = rotateRightBits(val.sockets, i, bitWidth);
     if (stateSet.has(sockets)) continue;
 
     // add unique rotation
@@ -53,5 +53,12 @@ for (const [key, val] of Object.entries(states)) {
     });
   });
 }
+
+export const oppositeLoc: Record<LocNames, LocNames> = {
+  UP: "DOWN",
+  DOWN: "UP",
+  LEFT: "RIGHT",
+  RIGHT: "LEFT",
+};
 
 export const stateNames = Object.keys(states).flat();

@@ -2,7 +2,12 @@
 
 import { type Sprite, Texture } from "pixi.js";
 import type { Textures } from "@/components/Canvas";
-import { stateNames, states as statesDict } from "./generateStates";
+import type { LocNames } from "@/types/tileStateTypes";
+import {
+  oppositeLoc,
+  stateNames,
+  states as statesDict,
+} from "./generateStates";
 import { randomPick } from "./utils";
 
 export const newGrid = (dim: number) => {
@@ -90,96 +95,70 @@ export class Cell {
 
   propagate(grid: Cell[]) {
     const [state] = this.states;
+    this.propagateToNeighbor(state, grid, "UP");
+    this.propagateToNeighbor(state, grid, "DOWN");
+    this.propagateToNeighbor(state, grid, "RIGHT");
+    this.propagateToNeighbor(state, grid, "LEFT");
+  }
 
-    // up
-    if (this.y - 1 >= 0) {
-      const upCell = grid[this.pos - this.dim];
-      if (!upCell.collapsed) {
-        const validStates = new Set(statesDict[state].UP);
-        // Set intersection of upCell.states and validStates
-        upCell.states = validStates.intersection(upCell.states);
-        upCell.checkNeighbors(grid);
-      }
-    }
-    // down
-    if (this.y + 1 < this.dim) {
-      const downCell = grid[this.pos + this.dim];
-      if (!downCell.collapsed) {
-        const validStates = new Set(statesDict[state].DOWN);
-        downCell.states = validStates.intersection(downCell.states);
-        downCell.checkNeighbors(grid);
-      }
-    }
-    // right
-    if (this.x + 1 < this.dim) {
-      const rightCell = grid[this.pos + 1];
-      if (!rightCell.collapsed) {
-        const validStates = new Set(statesDict[state].RIGHT);
-        rightCell.states = validStates.intersection(rightCell.states);
-        rightCell.checkNeighbors(grid);
-      }
-    }
-    // left
-    if (this.x - 1 >= 0) {
-      const leftCell = grid[this.pos - 1];
-      if (!leftCell.collapsed) {
-        const validStates = new Set(statesDict[state].LEFT);
-        leftCell.states = validStates.intersection(leftCell.states);
-        leftCell.checkNeighbors(grid);
-      }
-    }
+  propagateToNeighbor(refState: string, grid: Cell[], loc: LocNames) {
+    // use reference state (refState) to obtain valid states of neighbor
+    const validStates = new Set(statesDict[refState][loc]);
+    const neighbor = this.getNeighbor(grid, loc);
+    if (!neighbor) return;
+    if (neighbor.collapsed) return;
+    // set intersection of neighbor's cell states and valid states
+    neighbor.states = neighbor.states.intersection(validStates);
+    neighbor.checkNeighbors(grid);
   }
 
   // reduce current states based on neighbors
   checkNeighbors(grid: Cell[]) {
-    // up
-    if (this.y - 1 >= 0) {
-      const upCell = grid[this.pos - this.dim];
-      const validStates = new Set();
-      for (const state of upCell.states) {
-        for (const validState of statesDict[state].DOWN) {
-          validStates.add(validState);
-        }
-      }
-
-      // Set intersection of current cell's states and valid states
-      this.states = validStates.intersection(this.states);
-    }
-    // down
-    if (this.y + 1 < this.dim) {
-      const downCell = grid[this.pos + this.dim];
-      const validStates = new Set();
-      for (const state of downCell.states) {
-        for (const validState of statesDict[state].UP) {
-          validStates.add(validState);
-        }
-      }
-      this.states = validStates.intersection(this.states);
-    }
-    // right
-    if (this.x + 1 < this.dim) {
-      const rightCell = grid[this.pos + 1];
-      const validStates = new Set();
-      for (const state of rightCell.states) {
-        for (const validState of statesDict[state].LEFT) {
-          validStates.add(validState);
-        }
-      }
-      this.states = validStates.intersection(this.states);
-    }
-    // left
-    if (this.x - 1 >= 0) {
-      const leftCell = grid[this.pos - 1];
-      const validStates = new Set();
-      for (const state of leftCell.states) {
-        for (const validState of statesDict[state].RIGHT) {
-          validStates.add(validState);
-        }
-      }
-      this.states = validStates.intersection(this.states);
-    }
-    // recalculate entropy
+    this.checkNeighbor(grid, "UP");
+    this.checkNeighbor(grid, "DOWN");
+    this.checkNeighbor(grid, "RIGHT");
+    this.checkNeighbor(grid, "LEFT");
     this.entropy = this.states.size;
-    // TODO: restart or backtrack when no possible states
+    // reset grid if conflict occurs
+    // if (this.states.size === 0) resetGrid(grid);
+  }
+
+  checkNeighbor(grid: Cell[], loc: LocNames) {
+    const validStates = new Set();
+    const neighbor = this.getNeighbor(grid, loc);
+    if (!neighbor) return;
+    // get neighbor's valid opposite states to check with current states
+    for (const state of neighbor.states) {
+      for (const validState of statesDict[state][oppositeLoc[loc]]) {
+        validStates.add(validState);
+      }
+    }
+    // set intersection of current cell's states and valid states
+    this.states = this.states.intersection(validStates);
+  }
+
+  getNeighbor(grid: Cell[], loc: LocNames) {
+    switch (loc) {
+      case "UP":
+        if (this.y - 1 >= 0) {
+          return grid[this.pos - this.dim];
+        }
+        return;
+      case "DOWN":
+        if (this.y + 1 < this.dim) {
+          return grid[this.pos + this.dim];
+        }
+        return;
+      case "RIGHT":
+        if (this.x + 1 < this.dim) {
+          return grid[this.pos + 1];
+        }
+        return;
+      case "LEFT":
+        if (this.x - 1 >= 0) {
+          return grid[this.pos - 1];
+        }
+        return;
+    }
   }
 }
