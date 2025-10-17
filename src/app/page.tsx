@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import { Canvas } from "@/components/Canvas";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,12 +26,14 @@ const Container = ({
 const tiles = ["🏡", "🏢", "⛲️", "🪨", "⛰️", "🌳"];
 
 export default function Home() {
+  const [doGenerate, setDoGenerate] = useState(false);
+
   return (
     <div className="font-sans grid grid-cols-[1fr_340px] items-center justify-center min-h-screen">
       <main className="h-full w-full flex justify-center items-center bg-slate-200">
-        <Canvas />
+        <Canvas doGenerate={doGenerate} setDoGenerate={setDoGenerate} />
       </main>
-      <div className="h-full flex flex-col items-center gap-16 bg-slate-300 shadow-md border-l-2 border-slate-200">
+      <div className="h-full flex flex-col items-center gap-14 bg-slate-300 shadow-md border-l-2 border-slate-200">
         <Container className="w-9/10 px-2 py-3 mt-8 justify-center">
           <h1 className="font-semibold text-3xl text-center">
             Open City 🏡🏢🌳
@@ -61,6 +65,13 @@ export default function Home() {
             ))}
           </Container>
         </div>
+        <Button
+          className="w-9/10 text-xl h-14 rounded-2xl border-2 border-slate-600 cursor-pointer"
+          size="lg"
+          onClick={() => setDoGenerate(true)}
+        >
+          Generate
+        </Button>
       </div>
     </div>
   );
